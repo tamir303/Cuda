@@ -1,6 +1,5 @@
 #include <mpi.h>
 #include <stdio.h>
-#include <omp.h>
 #include <time.h>
 #include <stdlib.h>
 #include "myProto.h"
@@ -12,35 +11,6 @@ It sends the half of the array to the process 1.
 Both processes start to increment members of thier members by 1 - partially with OpenMP, partially with CUDA
 The results is send from the process 1 to the process 0, which perform the test to verify that the integration worked properly
 */
-
-void combine_hist(int* h_1, int* h_2) {
-   #pragma omp paralle for
-   for (int i = 0; i < RANGE; i++)
-      h_1[i] += h_2[i];
-}
-
-void random_array(int* arr) {
-   omp_set_num_threads(NUM_THREADS);
-
-   #pragma omp parallel
-   {
-      // Get the thread ID
-      int tid = omp_get_thread_num();
-
-      // Calculate the range for each thread
-      int start = tid * (SIZE / NUM_THREADS);
-      int end = (tid + 1) * (SIZE / NUM_THREADS);
-
-      // Generate and insert random numbers within the thread's range
-      for (int i = start; i < end; i++)
-         arr[i] = rand() % RANGE;
-   }
-}
-
-void print_arr(int* arr) {
-   for (int i=0; i < RANGE; i++)
-      printf("\n %d: %d",i, arr[i]);
-}
 
 int main(int argc, char *argv[])
 {
@@ -66,10 +36,11 @@ int main(int argc, char *argv[])
       MPI_Abort(MPI_COMM_WORLD, __LINE__);
    }
 
+   // Seperate the task between 2 processes
    // Master process (process 0)
    if (rank == 0)
    {
-      random_array(data);
+      random_array(data); // create random array for histogram
       MPI_Send((data + SIZE / 2), SIZE / 2, MPI_INT, 1, 0, MPI_COMM_WORLD);
    }
    else // slave process (process 1)
@@ -88,9 +59,9 @@ int main(int argc, char *argv[])
    // Collect the result on one of processes
    if (rank == 0) {
       int* slave_hist = (int *)malloc(RANGE * sizeof(int));
-      print_arr(hist);
       MPI_Recv(slave_hist, RANGE, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
-      combine_hist(hist, slave_hist);
+      combine_hist(hist, slave_hist); // combine 2 processes hist
+      print_arr(hist); // print final results
    }
    else
       MPI_Send(hist, RANGE, MPI_INT, 0, 0, MPI_COMM_WORLD);
@@ -99,7 +70,6 @@ int main(int argc, char *argv[])
    if (rank == 0) {
       test(data, SIZE, hist);
    }
-
 
    MPI_Finalize();
 
