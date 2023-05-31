@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
    // Collect the result on one of processes
    if (rank == 0) {
       int* slave_hist = (int *)malloc(RANGE * sizeof(int));
+      print_arr(hist);
       MPI_Recv(slave_hist, RANGE, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
       combine_hist(hist, slave_hist);
    }
@@ -96,7 +97,6 @@ int main(int argc, char *argv[])
 
    // Perform a test just to verify that integration MPI + OpenMP + CUDA worked as expected
    if (rank == 0) {
-      print_arr(hist);
       test(data, SIZE, hist);
    }
 
