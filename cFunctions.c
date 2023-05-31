@@ -14,5 +14,5 @@ void test(int *data, int n, int* expected_hist) {
             fprintf(stderr, "\nTest fail for number %d, expected %d but got %d\n", i, expected_hist[i], iterative_hist[i]);
             exit(1);
         }
-    printf("The test passed successfully\n"); 
+    printf("\nThe test passed successfully\n"); 
 }
